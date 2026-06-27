@@ -2,7 +2,6 @@ import { nowIso } from "@/lib/dates";
 import { createId } from "@/lib/id";
 import type { ActionBoardShare } from "@/types";
 import {
-  findById,
   getMockStore,
   notFoundError,
   updateMockStore,

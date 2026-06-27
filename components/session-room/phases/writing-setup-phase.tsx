@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { Play } from "lucide-react";
 
-import { FacilitatorPanel } from "@/components/session-room/facilitator-panel";
-import { PhaseHeading, WaitingState } from "@/components/session-room/phase-shell";
+import { FacilitatorCommandBar } from "@/components/session-room/command-bar";
+import { PhaseMission } from "@/components/session-room/phase-mission";
+import { WaitingState } from "@/components/session-room/phase-shell";
 import { useRoom } from "@/components/session-room/session-room-context";
 import { InlineValidationMessage } from "@/components/ui-state/inline-validation-message";
 import { Button } from "@/components/ui/button";
@@ -53,7 +54,7 @@ export function WritingSetupPhase() {
   if (!viewer.isFacilitator) {
     return (
       <div className="space-y-4">
-        <PhaseHeading title="Writing setup" />
+        <PhaseMission phase="writing_setup" />
         <WaitingState description="The facilitator is setting the timer. Get ready to add your cards." />
       </div>
     );
@@ -61,10 +62,7 @@ export function WritingSetupPhase() {
 
   return (
     <div className="space-y-4">
-      <PhaseHeading
-        title="Writing setup"
-        description="Choose how long the team has to add cards privately."
-      />
+      <PhaseMission phase="writing_setup" isFacilitator />
 
       <Card>
         <CardContent className="space-y-4 p-4">
@@ -98,12 +96,15 @@ export function WritingSetupPhase() {
         </CardContent>
       </Card>
 
-      <FacilitatorPanel>
-        <Button onClick={() => void start()} disabled={starting}>
-          <Play />
-          {starting ? "Starting…" : `Start writing (${minutes} min)`}
-        </Button>
-      </FacilitatorPanel>
+      <FacilitatorCommandBar
+        hint="Start writing to open the board for everyone."
+        primary={
+          <Button onClick={() => void start()} disabled={starting}>
+            <Play />
+            {starting ? "Starting…" : `Start writing (${minutes} min)`}
+          </Button>
+        }
+      />
     </div>
   );
 }

@@ -18,15 +18,15 @@ export function ParticipantStrip() {
           <div
             key={participant.id}
             className={cn(
-              "flex items-center gap-2 rounded-full border bg-background py-1 pl-1 pr-3",
-              isViewer ? "border-primary" : "border-border",
+              "flex items-center gap-2 rounded-full border bg-background py-1 pl-1 pr-3 text-xs",
+              isViewer ? "border-primary ring-1 ring-primary/30" : "border-border",
             )}
           >
             <Avatar name={participant.displayName} className="size-7 text-[10px]" />
-            <span className="text-xs font-medium">
+            <span className="font-medium">
               {participant.displayName}
               {isFacilitator ? (
-                <span className="ml-1 text-[10px] text-muted-foreground">
+                <span className="ml-1 text-[10px] uppercase tracking-wide text-muted-foreground">
                   · host
                 </span>
               ) : null}

@@ -1,4 +1,3 @@
-import { nowIso } from "@/lib/dates";
 import { createId } from "@/lib/id";
 import { endTimer, pauseTimer, resumeTimer, startTimer } from "@/lib/timer";
 import type { TimerPhase, TimerState } from "@/types";

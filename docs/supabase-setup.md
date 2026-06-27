@@ -14,7 +14,8 @@ Copy `.env.example` to `.env.local` and fill in values from your [Supabase proje
 | Variable | Required | Scope | Description |
 |----------|----------|-------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | For Supabase mode | Public | Project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | For Supabase mode | Public | Anon / publishable key |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | For Supabase mode | Public | Publishable key (preferred) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | For Supabase mode | Public | Legacy alias for publishable/anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | For server writes | **Server only** | Service role key for participant-token and share-token validation |
 
 Without `SUPABASE_SERVICE_ROLE_KEY`, facilitator auth may work but participant join and share links will fall back to mock mode on the server.

@@ -19,8 +19,8 @@ This is an early-stage project. Expect rough edges, and see [Known limitations](
 - **Guided session phases** — Lobby → Warm-up → Previous action review → Writing → Reveal & Group → Voting → Discussion → Summary.
 - **Facilitator dashboard** — create sessions, share a join code/link, and run the session through each phase.
 - **Participant join flow** — join by session code or link and take part with a display name.
-- **Retro frameworks** — Start/Stop/Continue, Mad/Sad/Glad, and 4Ls board layouts.
-- **Warm-up activities** — light check-in prompts to open the session.
+- **Retro frameworks** — Start/Stop/Continue, Mad/Sad/Glad, and Sailboat board layouts.
+- **Warm-up activities** — Mood Character Builder, This or That, and Guessing Game to open the session.
 - **Card writing, grouping, and reveal** — participants add notes that are revealed and organized into themes.
 - **Voting** — configurable voting on grouped themes to surface what matters most.
 - **Action items & Action Board** — capture commitments during the retro and review them on a persistent board.
@@ -103,7 +103,7 @@ Use placeholders only — never commit real keys. See `.env.example`.
 | Variable | Required | Scope | Description |
 |----------|----------|-------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase mode only | Public | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase mode only | Public | Supabase anon / publishable key |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase mode only | Public | Supabase publishable key. The legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` is also accepted as a fallback. |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server writes | **Server only** | Service role key for participant-token and share-token server actions. Never expose to the client. |
 
 If all are unset, the app runs in mock mode.
@@ -116,14 +116,38 @@ If all are unset, the app runs in mock mode.
 | `npm run build` | Production build |
 | `npm run start` | Run the production build |
 | `npm run lint` | Run ESLint |
+| `npm run typecheck` | Type-check the project with `tsc` |
+| `npm run test` | Run the test suite once (Vitest) |
+| `npm run test:watch` | Run tests in watch mode |
+
+## Testing
+
+RetroScope uses [Vitest](https://vitest.dev) with
+[Testing Library](https://testing-library.com) and `jsdom`.
+
+```bash
+npm run test
+```
+
+Tests live in `tests/`:
+
+- `tests/unit/` — pure utility logic: framework columns, voting limits and
+  remaining-vote calculation, timer math, action-item filters, and card
+  permissions.
+- `tests/components/` — focused component behavior: Create Session and
+  Participant Join form validation, Action Board filtering, the read-only
+  shared board, the session phase header, and the voting counter.
+
+Shared test fixtures and helpers are in `tests/factories.ts` and
+`tests/helpers/`.
 
 ## Known limitations
 
 - This is an early MVP; the flow works but has not been hardened for production use.
 - Mock mode data lives only in the browser's `localStorage` and is not shared between devices or persisted server-side.
 - Authentication and full persistence require a configured Supabase project.
-- No automated test suite yet.
-- Custom retro templates and some warm-up activities are planned but not fully built out.
+- Automated tests cover core utilities and key form/permission UI; broader end-to-end coverage is not yet in place (see the [manual QA checklist](docs/qa-checklist.md)).
+- Custom retro templates and additional warm-up activities are planned but not fully built out.
 
 ## Planned improvements
 

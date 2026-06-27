@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowRight, Eye, Lightbulb } from "lucide-react";
+import { ArrowRight, Check, Eye, Lightbulb, RotateCcw } from "lucide-react";
 
-import { FacilitatorPanel } from "@/components/session-room/facilitator-panel";
 import { useRoom } from "@/components/session-room/session-room-context";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -74,8 +73,10 @@ export function GuessingGameWarmup() {
 
   const closestId = closestNumericGuess(question.answer, guesses);
 
+  const cleanedGuess = guess.trim().replace(/\s+/g, " ").slice(0, 60);
+
   const submit = () => {
-    if (!viewer.participantId || !guess.trim()) {
+    if (!viewer.participantId || cleanedGuess.length === 0) {
       return;
     }
     const ctx = getParticipantContext(session.id);
@@ -90,8 +91,8 @@ export function GuessingGameWarmup() {
         response: {
           type: "guessing_game",
           questionId: question.id,
-          answer: guess.trim(),
-          isCorrect: checkTriviaAnswer(question.id, guess.trim()),
+          answer: cleanedGuess,
+          isCorrect: checkTriviaAnswer(question.id, cleanedGuess),
         },
       },
       ctx,
@@ -107,11 +108,18 @@ export function GuessingGameWarmup() {
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="scope-frame scanlines overflow-hidden">
         <CardContent className="space-y-4 p-4">
-          <p className="text-center text-xs text-muted-foreground">
-            Question {questionIndex + 1} of {TRIVIA_QUESTIONS.length}
-          </p>
+          <div className="flex items-center justify-between">
+            <span className="vhs-label">
+              <Lightbulb className="size-3" />
+              Quiz Console
+            </span>
+            <span className="retro-meta">
+              {String(questionIndex + 1).padStart(2, "0")} /{" "}
+              {String(TRIVIA_QUESTIONS.length).padStart(2, "0")}
+            </span>
+          </div>
           <p className="text-center text-lg font-semibold">{question.question}</p>
           {question.hint ? (
             <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
@@ -121,36 +129,42 @@ export function GuessingGameWarmup() {
           ) : null}
 
           {viewer.participantId && !revealed ? (
-            <div className="mx-auto flex max-w-sm gap-2">
-              <Input
-                placeholder={myGuess ? "Update your guess" : "Your guess"}
-                value={guess}
-                onChange={(event) => setGuess(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    submit();
-                  }
-                }}
-              />
-              <Button onClick={submit} disabled={!guess.trim()}>
-                {myGuess ? "Update" : "Submit"}
-              </Button>
+            <div className="mx-auto max-w-sm space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  placeholder={myGuess ? "Update your guess" : "Type your guess…"}
+                  value={guess}
+                  maxLength={60}
+                  onChange={(event) => setGuess(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      submit();
+                    }
+                  }}
+                />
+                <Button onClick={submit} disabled={cleanedGuess.length === 0}>
+                  {myGuess ? "Update" : "Submit"}
+                </Button>
+              </div>
+              {myGuess ? (
+                <p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
+                  <Check className="size-3.5 text-retro-teal" />
+                  Your guess is in:{" "}
+                  <span className="rounded bg-secondary px-1.5 py-0.5 font-mono font-semibold text-secondary-foreground">
+                    {myGuess.answer}
+                  </span>
+                </p>
+              ) : null}
             </div>
-          ) : null}
-
-          {myGuess && !revealed ? (
-            <p className="text-center text-xs text-muted-foreground">
-              Your guess is locked in: <strong>{myGuess.answer}</strong>
-            </p>
           ) : null}
 
           {revealed ? (
             <div className="space-y-3">
-              <div className="rounded-xl border border-primary/40 bg-primary/5 p-3 text-center">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                  Answer
+              <div className="retro-gradient-panel relative overflow-hidden rounded-xl p-4 text-center text-white shadow-md">
+                <p className="retro-meta text-white/80">Correct answer</p>
+                <p className="retro-timer text-2xl font-bold">
+                  {question.answer}
                 </p>
-                <p className="text-lg font-semibold">{question.answer}</p>
               </div>
               <div className="space-y-2">
                 {guesses.length === 0 ? (
@@ -158,68 +172,84 @@ export function GuessingGameWarmup() {
                     No guesses submitted.
                   </p>
                 ) : (
-                  guesses.map((g) => (
-                    <div
-                      key={g.participantId}
-                      className={cn(
-                        "flex items-center justify-between gap-2 rounded-lg border p-2",
-                        g.isCorrect
-                          ? "border-emerald-400/60 bg-emerald-500/5"
-                          : "border-border",
-                      )}
-                    >
-                      <span className="flex items-center gap-2 text-sm">
-                        <Avatar
-                          name={participantName(g.participantId)}
-                          className="size-6 text-[10px]"
-                        />
-                        {participantName(g.participantId)}
-                      </span>
-                      <span className="flex items-center gap-2 text-sm font-medium">
-                        {g.answer}
-                        {g.isCorrect ? (
-                          <Badge variant="default">Correct</Badge>
-                        ) : null}
-                        {!g.isCorrect && g.participantId === closestId ? (
-                          <Badge variant="secondary">Closest</Badge>
-                        ) : null}
-                      </span>
-                    </div>
-                  ))
+                  guesses.map((g) => {
+                    const isClosest =
+                      !g.isCorrect && g.participantId === closestId;
+                    return (
+                      <div
+                        key={g.participantId}
+                        className={cn(
+                          "flex items-center justify-between gap-2 rounded-lg border p-2 transition-colors",
+                          g.isCorrect
+                            ? "border-retro-teal/60 bg-retro-teal/10 ring-1 ring-retro-teal/30"
+                            : isClosest
+                              ? "border-retro-coral/50 bg-retro-coral/10"
+                              : "border-border",
+                        )}
+                      >
+                        <span className="flex items-center gap-2 text-sm">
+                          <Avatar
+                            name={participantName(g.participantId)}
+                            className="size-6 text-[10px]"
+                            active={g.isCorrect}
+                          />
+                          {participantName(g.participantId)}
+                        </span>
+                        <span className="flex items-center gap-2 text-sm font-medium">
+                          {g.answer}
+                          {g.isCorrect ? (
+                            <Badge variant="status">Correct</Badge>
+                          ) : null}
+                          {isClosest ? (
+                            <Badge variant="priority">Closest</Badge>
+                          ) : null}
+                        </span>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>
           ) : (
             <p className="text-center text-xs text-muted-foreground">
               {guesses.length} guess{guesses.length === 1 ? "" : "es"} submitted ·
-              hidden until reveal
+              waiting for facilitator reveal
             </p>
           )}
         </CardContent>
       </Card>
 
       {viewer.isFacilitator ? (
-        <FacilitatorPanel>
+        <div className="flex flex-wrap items-center justify-center gap-2">
           {!revealed ? (
-            <Button onClick={() => setRevealed(true)}>
+            <Button variant="secondary" onClick={() => setRevealed(true)}>
               <Eye />
               Reveal answer
             </Button>
           ) : (
-            <Button
-              variant="secondary"
-              disabled={questionIndex >= TRIVIA_QUESTIONS.length - 1}
-              onClick={() =>
-                goToQuestion(
-                  Math.min(questionIndex + 1, TRIVIA_QUESTIONS.length - 1),
-                )
-              }
-            >
-              Next question
-              <ArrowRight />
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={() => goToQuestion(questionIndex)}
+              >
+                <RotateCcw />
+                Hide answer
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={questionIndex >= TRIVIA_QUESTIONS.length - 1}
+                onClick={() =>
+                  goToQuestion(
+                    Math.min(questionIndex + 1, TRIVIA_QUESTIONS.length - 1),
+                  )
+                }
+              >
+                Next question
+                <ArrowRight />
+              </Button>
+            </>
           )}
-        </FacilitatorPanel>
+        </div>
       ) : null}
     </div>
   );

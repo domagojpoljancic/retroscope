@@ -2,15 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { ErrorState } from "@/components/ui-state/error-state";
 import { LoadingState } from "@/components/ui-state/loading-state";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
 import { DiscussionPhase } from "@/components/session-room/phases/discussion-phase";
 import { LobbyPhase } from "@/components/session-room/phases/lobby-phase";
 import { PreviousActionReviewPhase } from "@/components/session-room/phases/previous-action-review-phase";
@@ -21,7 +18,6 @@ import { VotingSetupPhase } from "@/components/session-room/phases/voting-setup-
 import { WarmupPhase } from "@/components/session-room/phases/warmup-phase";
 import { WritingPhase } from "@/components/session-room/phases/writing-phase";
 import { WritingSetupPhase } from "@/components/session-room/phases/writing-setup-phase";
-import { ParticipantStrip } from "@/components/session-room/participant-strip";
 import { PhaseNav } from "@/components/session-room/phase-nav";
 import {
   SessionRoomProvider,
@@ -49,10 +45,12 @@ type SessionRoomProps = {
 
 export function SessionRoom({ sessionId }: SessionRoomProps) {
   const snapshot = useSessionData(sessionId);
+  const searchParams = useSearchParams();
   const [viewerKey, setViewerKey] = useState("facilitator");
+  const [showDevTools, setShowDevTools] = useState(false);
 
   const session = snapshot?.session ?? null;
-  const participants = snapshot?.participants ?? [];
+  const participants = useMemo(() => snapshot?.participants ?? [], [snapshot]);
 
   const viewers = useMemo<RoomViewer[]>(
     () => (session ? buildSessionViewers(session, participants) : []),
@@ -100,6 +98,7 @@ export function SessionRoom({ sessionId }: SessionRoomProps) {
 
   const activeViewer =
     viewers.find((viewer) => viewer.key === viewerKey) ?? viewers[0];
+  const devToolsEnabled = searchParams.get("devtools") === "1" || showDevTools;
 
   const goToPhase = (phase: SessionPhase) => {
     const updates: Parameters<typeof api.updateSession>[1] = {
@@ -158,19 +157,18 @@ export function SessionRoom({ sessionId }: SessionRoomProps) {
   return (
     <SessionRoomProvider value={contextValue}>
       <div className="space-y-4">
-        <SessionTopBar />
-        <ViewerSwitcher
-          viewers={viewers}
-          activeKey={activeViewer.key}
-          onChange={setViewerKey}
+        <SessionTopBar
+          devToolsEnabled={devToolsEnabled}
+          onToggleDevTools={() => setShowDevTools((value) => !value)}
         />
         <PhaseNav />
-        <Card>
-          <CardContent className="p-4">
-            <ParticipantStrip />
-          </CardContent>
-        </Card>
-
+        {devToolsEnabled ? (
+          <ViewerSwitcher
+            viewers={viewers}
+            activeKey={activeViewer.key}
+            onChange={setViewerKey}
+          />
+        ) : null}
         <PhaseContent phase={session.currentPhase} />
       </div>
     </SessionRoomProvider>

@@ -27,7 +27,8 @@ export function PageHeader({
     >
       <div className="space-y-3">
         {eyebrow ? (
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-primary">
+          <p className="flex items-center gap-2 font-mono text-xs font-medium uppercase tracking-[0.2em] text-primary">
+            <span className="inline-block h-2.5 w-2.5 rounded-sm bg-[image:var(--retro-gradient)]" />
             {eyebrow}
           </p>
         ) : null}

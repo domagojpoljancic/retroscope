@@ -2,8 +2,8 @@
 
 import { Lock, Minus, Plus, TimerReset } from "lucide-react";
 
-import { FacilitatorPanel } from "@/components/session-room/facilitator-panel";
-import { PhaseHeading } from "@/components/session-room/phase-shell";
+import { FacilitatorCommandBar } from "@/components/session-room/command-bar";
+import { PhaseMission } from "@/components/session-room/phase-mission";
 import { TimerDisplay } from "@/components/session-room/timer-display";
 import { useRoom } from "@/components/session-room/session-room-context";
 import { EmptyState } from "@/components/ui-state/empty-state";
@@ -122,31 +122,98 @@ export function VotingPhase() {
     void api.extendTimer(timer.id, 60);
   };
 
-  const targets = [
-    ...groups.map((group) => ({
-      key: `group:${group.id}`,
-      id: group.id,
-      type: "group" as const,
-      title: group.title,
-      subtitle: `${cards.filter((c) => c.groupId === group.id).length} cards`,
-      total: countVotesForGroup(votes, group.id),
-    })),
-    ...ungroupedRevealed.map((card) => ({
-      key: `card:${card.id}`,
-      id: card.id,
-      type: "card" as const,
-      title: card.text,
-      subtitle: "Ungrouped card",
-      total: countVotesForCard(votes, card.id),
-    })),
-  ];
+  type VoteTarget = {
+    key: string;
+    id: string;
+    type: VoteTargetType;
+    title: string;
+    subtitle: string;
+    preview: string[];
+    total: number;
+  };
+
+  const groupTargets: VoteTarget[] = groups.map((group) => ({
+    key: `group:${group.id}`,
+    id: group.id,
+    type: "group" as const,
+    title: group.title,
+    subtitle: `${cards.filter((c) => c.groupId === group.id).length} cards`,
+    preview: cards
+      .filter((c) => c.groupId === group.id)
+      .slice(0, 2)
+      .map((c) => c.text),
+    total: countVotesForGroup(votes, group.id),
+  }));
+
+  const cardTargets: VoteTarget[] = ungroupedRevealed.map((card) => ({
+    key: `card:${card.id}`,
+    id: card.id,
+    type: "card" as const,
+    title: card.text,
+    subtitle: "Ungrouped card",
+    preview: [] as string[],
+    total: countVotesForCard(votes, card.id),
+  }));
+
+  const totalTargets = groupTargets.length + cardTargets.length;
+
+  const renderTarget = (target: VoteTarget) => {
+    const mine = myVotesFor(target.type, target.id).length;
+    return (
+      <Card key={target.key} className={cn(mine > 0 && "border-primary/50")}>
+        <CardContent className="flex items-center justify-between gap-3 p-4">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium">{target.title}</p>
+            <p className="text-xs text-muted-foreground">
+              {target.subtitle} · {target.total} total vote
+              {target.total === 1 ? "" : "s"}
+            </p>
+            {target.preview.length > 0 ? (
+              <p className="mt-1 truncate text-[11px] text-muted-foreground">
+                Includes: {target.preview.join(" · ")}
+              </p>
+            ) : null}
+          </div>
+          {viewer.participantId ? (
+            <div className="flex items-center gap-2">
+              <Button
+                size="icon"
+                variant="outline"
+                className="size-8"
+                disabled={mine === 0 || votingEnded}
+                onClick={() => removeVote(target.type, target.id)}
+                aria-label="Remove vote"
+              >
+                <Minus />
+              </Button>
+              <span className="w-6 text-center text-sm font-semibold">
+                {mine}
+              </span>
+              <Button
+                size="icon"
+                variant="outline"
+                className="size-8"
+                disabled={remaining <= 0 || votingEnded}
+                onClick={() => castVote(target.type, target.id)}
+                aria-label="Add vote"
+              >
+                <Plus />
+              </Button>
+            </div>
+          ) : (
+            <Badge variant="muted">{target.total}</Badge>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="space-y-4">
-      <PhaseHeading
-        title="Voting"
-        description="Spend your votes on the themes and cards that matter most. You can move votes around while voting is open."
-        action={
+      <PhaseMission
+        phase="voting"
+        isFacilitator={viewer.isFacilitator}
+        aside={
           <div className="flex items-center gap-2">
             {viewer.participantId ? (
               <Badge variant={remaining > 0 ? "default" : "muted"}>
@@ -164,72 +231,58 @@ export function VotingPhase() {
         <PermissionHint message="You've used all your votes. Remove a vote to reassign." />
       ) : null}
 
-      {targets.length === 0 ? (
+      {totalTargets === 0 ? (
         <EmptyState description="Nothing to vote on yet. Reveal and group cards first." />
       ) : (
-        <div className="grid gap-3 md:grid-cols-2">
-          {targets.map((target) => {
-            const mine = myVotesFor(target.type, target.id).length;
-            return (
-              <Card
-                key={target.key}
-                className={cn(mine > 0 && "border-primary/50")}
-              >
-                <CardContent className="flex items-center justify-between gap-3 p-4">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{target.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {target.subtitle} · {target.total} total vote
-                      {target.total === 1 ? "" : "s"}
-                    </p>
-                  </div>
-                  {viewer.participantId ? (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="size-8"
-                        disabled={mine === 0 || votingEnded}
-                        onClick={() => removeVote(target.type, target.id)}
-                        aria-label="Remove vote"
-                      >
-                        <Minus />
-                      </Button>
-                      <span className="w-6 text-center text-sm font-semibold">
-                        {mine}
-                      </span>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="size-8"
-                        disabled={remaining <= 0 || votingEnded}
-                        onClick={() => castVote(target.type, target.id)}
-                        aria-label="Add vote"
-                      >
-                        <Plus />
-                      </Button>
-                    </div>
-                  ) : (
-                    <Badge variant="muted">{target.total}</Badge>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
+        <div className="space-y-5">
+          {groupTargets.length > 0 ? (
+            <section className="space-y-3">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold">Themes</h3>
+                <span className="retro-meta">Primary targets</span>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {groupTargets.map(renderTarget)}
+              </div>
+            </section>
+          ) : null}
+
+          {cardTargets.length > 0 ? (
+            <section className="space-y-3">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold">Ungrouped cards</h3>
+                <span className="retro-meta">Secondary targets</span>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {cardTargets.map(renderTarget)}
+              </div>
+            </section>
+          ) : null}
         </div>
       )}
 
       {viewer.isFacilitator ? (
-        <FacilitatorPanel>
-          <Button variant="outline" onClick={addTime} disabled={!timer}>
-            <TimerReset />
-            +1 min
-          </Button>
-          <Button onClick={endVoting}>
-            <Lock />
-            End voting
-          </Button>
-        </FacilitatorPanel>
+        <FacilitatorCommandBar
+          hint="End voting when everyone has spent their votes."
+          status={timer ? <TimerDisplay timer={timer} /> : null}
+          secondary={
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={addTime}
+              disabled={!timer}
+            >
+              <TimerReset />
+              +1 min
+            </Button>
+          }
+          primary={
+            <Button onClick={endVoting}>
+              <Lock />
+              End voting
+            </Button>
+          }
+        />
       ) : null}
     </div>
   );

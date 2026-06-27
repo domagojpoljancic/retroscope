@@ -18,7 +18,7 @@ export function ViewerSwitcher({
     <div className="rounded-2xl border border-dashed border-border bg-muted/40 p-3">
       <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
         <Eye className="size-3.5" />
-        Prototype viewer — test as
+        Dev tools - view as
       </div>
       <div className="flex flex-wrap gap-1.5">
         {viewers.map((viewer) => (

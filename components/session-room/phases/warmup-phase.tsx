@@ -2,8 +2,8 @@
 
 import { ArrowRight } from "lucide-react";
 
-import { FacilitatorPanel } from "@/components/session-room/facilitator-panel";
-import { PhaseHeading } from "@/components/session-room/phase-shell";
+import { FacilitatorCommandBar } from "@/components/session-room/command-bar";
+import { PhaseMission } from "@/components/session-room/phase-mission";
 import { useRoom } from "@/components/session-room/session-room-context";
 import { GuessingGameWarmup } from "@/components/session-room/warmups/guessing-game";
 import { MoodCharacterWarmup } from "@/components/session-room/warmups/mood-character";
@@ -32,10 +32,11 @@ export function WarmupPhase() {
 
   return (
     <div className="space-y-4">
-      <PhaseHeading
-        title={`Warm-up · ${WARMUP_LABELS[session.warmupType]}`}
-        description="A light activity to help the team arrive present before the retro."
-        action={
+      <PhaseMission
+        phase="warmup"
+        isFacilitator={viewer.isFacilitator}
+        title={`Warm up · ${WARMUP_LABELS[session.warmupType]}`}
+        aside={
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="muted">
               {submittedCount}/{participantTotal} submitted
@@ -54,12 +55,20 @@ export function WarmupPhase() {
       {session.warmupType === "guessing_game" ? <GuessingGameWarmup /> : null}
 
       {viewer.isFacilitator ? (
-        <FacilitatorPanel title="Move on">
-          <Button onClick={advance}>
-            Continue
-            <ArrowRight />
-          </Button>
-        </FacilitatorPanel>
+        <FacilitatorCommandBar
+          hint="Continue when the team has warmed up."
+          status={
+            <span className="retro-meta">
+              {submittedCount}/{participantTotal} joined in
+            </span>
+          }
+          primary={
+            <Button onClick={advance}>
+              Continue
+              <ArrowRight />
+            </Button>
+          }
+        />
       ) : null}
     </div>
   );

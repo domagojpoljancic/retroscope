@@ -174,7 +174,6 @@ export const mockBackend: BackendClient = {
     if (!session) {
       return null;
     }
-    const store = getMockStore();
     return {
       session,
       participants: participantService.listBySession(sessionId),

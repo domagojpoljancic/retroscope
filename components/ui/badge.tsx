@@ -14,6 +14,12 @@ const badgeVariants = cva(
           "border-transparent bg-secondary text-secondary-foreground",
         outline: "text-foreground",
         muted: "border-transparent bg-muted text-muted-foreground",
+        phase: "border-primary/20 bg-primary/10 text-primary",
+        priority: "border-retro-coral/30 bg-retro-coral/10 text-retro-coral",
+        status: "border-retro-teal/30 bg-retro-teal/10 text-retro-teal",
+        readOnly: "border-warning/35 bg-warning/10 text-warning-foreground",
+        overdue: "border-destructive/30 bg-destructive/10 text-destructive",
+        permission: "border-warning/35 bg-warning/10 text-warning-foreground",
       },
     },
     defaultVariants: {

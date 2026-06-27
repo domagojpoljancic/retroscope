@@ -30,7 +30,6 @@ import {
 } from "@/lib/identity";
 import { FRAMEWORK_LABELS, WARMUP_LABELS } from "@/lib/labels";
 import { sessionRoute } from "@/lib/routes";
-import { isSupabaseMode } from "@/lib/backend-mode";
 import { useSessionData } from "@/lib/use-session-data";
 import { validateDisplayName } from "@/lib/validation";
 import type { Session } from "@/types";
@@ -45,23 +44,22 @@ function isValidSessionCode(code: string): boolean {
 
 export function JoinForm({ sessionCode }: JoinFormProps) {
   const router = useRouter();
-  const [session, setSession] = useState<Session | null | undefined>(undefined);
-  const [loading, setLoading] = useState(true);
+  const invalidCode = !isValidSessionCode(sessionCode);
+  // Invalid codes resolve to "not found" immediately, so we never enter the
+  // loading state for them.
+  const [session, setSession] = useState<Session | null | undefined>(
+    invalidCode ? null : undefined,
+  );
+  const [loading, setLoading] = useState(!invalidCode);
   const [joining, setJoining] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
 
-  const invalidCode = !isValidSessionCode(sessionCode);
-
   const snapshot = useSessionData(session?.id ?? "");
-  const participantCount = isSupabaseMode()
-    ? (snapshot?.participants.length ?? 0)
-    : snapshot?.participants.length ?? 0;
+  const participantCount = snapshot?.participants.length ?? 0;
 
   useEffect(() => {
     if (invalidCode) {
-      setSession(null);
-      setLoading(false);
       return;
     }
 

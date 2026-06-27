@@ -7,7 +7,7 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabase/config";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   if (!isSupabaseConfigured()) {
     return NextResponse.next();
   }

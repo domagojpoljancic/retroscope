@@ -2,14 +2,18 @@ import { addSeconds, nowIso } from "@/lib/dates";
 import type { TimerState } from "@/types";
 
 export function getRemainingSeconds(timer: TimerState): number {
-  if (timer.status === "not_started" || !timer.endsAt) {
-    return timer.durationSeconds;
-  }
-
+  // A paused timer has no endsAt, so its remaining time is derived from how
+  // much elapsed between starting and pausing. This must be checked before the
+  // endsAt guard below, otherwise paused timers would report their full
+  // duration and lose progress on resume.
   if (timer.status === "paused" && timer.pausedAt && timer.startedAt) {
     const elapsed =
       new Date(timer.pausedAt).getTime() - new Date(timer.startedAt).getTime();
     return Math.max(timer.durationSeconds - Math.floor(elapsed / 1000), 0);
+  }
+
+  if (timer.status === "not_started" || !timer.endsAt) {
+    return timer.durationSeconds;
   }
 
   const remaining = Math.floor(

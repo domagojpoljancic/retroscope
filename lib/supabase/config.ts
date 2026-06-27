@@ -5,7 +5,15 @@
 export function isSupabaseConfigured(): boolean {
   return Boolean(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      getSupabasePublicKeyFromEnv(),
+  );
+}
+
+/** Supports both legacy anon key and newer publishable key env names. */
+function getSupabasePublicKeyFromEnv(): string | undefined {
+  return (
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 }
 
@@ -26,9 +34,11 @@ export function getSupabaseUrl(): string {
 }
 
 export function getSupabaseAnonKey(): string {
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = getSupabasePublicKeyFromEnv();
   if (!key) {
-    throw new Error("NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured");
+    throw new Error(
+      "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured",
+    );
   }
   return key;
 }

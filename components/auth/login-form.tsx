@@ -9,6 +9,7 @@ import {
   signOutAction,
   signUpAction,
 } from "@/app/actions/auth";
+import { BrandMark } from "@/components/layout/brand-mark";
 import { PageHeader } from "@/components/layout/page-header";
 import { InlineValidationMessage } from "@/components/ui-state/inline-validation-message";
 import { LoadingState } from "@/components/ui-state/loading-state";
@@ -122,13 +123,16 @@ export function LoginForm() {
 
   return (
     <>
+      <div className="mb-6">
+        <BrandMark size="lg" showTagline />
+      </div>
       <PageHeader
         eyebrow="Facilitator access"
         title="Sign in"
         description={
           supabaseEnabled
             ? "Create an account or sign in to manage sessions and action boards."
-            : "Supabase is not configured — use mock facilitator sign-in for local development."
+            : "Use local facilitator access to run sessions in this workspace."
         }
       />
 
@@ -136,12 +140,12 @@ export function LoginForm() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">
-              {supabaseEnabled ? (mode === "signin" ? "Sign in" : "Create account") : "Mock sign-in"}
+              {supabaseEnabled ? (mode === "signin" ? "Sign in" : "Create account") : "Facilitator sign-in"}
             </CardTitle>
             <CardDescription>
               {supabaseEnabled
                 ? "Facilitators authenticate with email and password."
-                : "Local prototype mode uses a mock facilitator profile."}
+                : "Continue as a facilitator to run your team's retros."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -198,11 +202,11 @@ export function LoginForm() {
             ) : (
               <>
                 <p className="text-sm text-muted-foreground">
-                  Click below to sign in as the demo facilitator. No Supabase credentials required.
+                  Continue as facilitator without account setup.
                 </p>
                 <InlineValidationMessage message={error} />
                 <Button disabled={loading} onClick={() => void handleMockSignIn()}>
-                  {loading ? "Signing in…" : "Continue as demo facilitator"}
+                  {loading ? "Signing in…" : "Continue as facilitator"}
                 </Button>
               </>
             )}

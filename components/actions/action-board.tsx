@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { ListPlus, Search, Trash2 } from "lucide-react";
 
 import {
@@ -24,6 +23,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { CopyButton } from "@/components/ui/copy-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { absoluteUrl } from "@/lib/clipboard";
@@ -40,9 +40,9 @@ import type {
   ActionItemStatus,
 } from "@/types";
 
-const PRIORITY_BADGE: Record<ActionItemPriority, "default" | "secondary" | "muted"> = {
-  high: "default",
-  medium: "secondary",
+const PRIORITY_BADGE: Record<ActionItemPriority, "priority" | "phase" | "muted"> = {
+  high: "priority",
+  medium: "phase",
   low: "muted",
 };
 
@@ -99,6 +99,7 @@ export function ActionBoard({
   const [creating, setCreating] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ActionItem | null>(null);
   const [revokeShareOpen, setRevokeShareOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const items = useMemo(() => {
     if (isSupabaseMode()) {
@@ -149,10 +150,14 @@ export function ActionBoard({
     return true;
   });
 
-  const columns: { status: ActionItemStatus; label: string }[] = [
-    { status: "to_do", label: "To do" },
-    { status: "in_progress", label: "In progress" },
-    { status: "done", label: "Done" },
+  const columns: {
+    status: ActionItemStatus;
+    label: string;
+    dot: string;
+  }[] = [
+    { status: "to_do", label: "To do", dot: "bg-muted-foreground/50" },
+    { status: "in_progress", label: "In progress", dot: "bg-retro-teal" },
+    { status: "done", label: "Done", dot: "bg-primary" },
   ];
 
   const copyShareValue = async () => {
@@ -282,22 +287,9 @@ export function ActionBoard({
         actions={
           readOnly ? undefined : (
             <>
-              <CopyButton
-                value=""
-                label="Copy share link"
-                onClickValue={copyShareValue}
-                onCopied={() => toast("Share link copied.", "success")}
-              />
-              {share ? (
-                <>
-                  <Button variant="outline" onClick={() => void regenerateShare()}>
-                    Regenerate link
-                  </Button>
-                  <Button variant="outline" onClick={() => setRevokeShareOpen(true)}>
-                    Revoke link
-                  </Button>
-                </>
-              ) : null}
+              <Button variant="outline" onClick={() => setShareOpen(true)}>
+                Share board
+              </Button>
               <Button onClick={() => setCreating(true)}>
                 <ListPlus />
                 New action item
@@ -392,8 +384,13 @@ export function ActionBoard({
             );
             return (
               <div key={column.status} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">{column.label}</h2>
+                <div className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2">
+                  <h2 className="retro-meta flex items-center gap-2 text-foreground">
+                    <span
+                      className={cn("size-2 rounded-full", column.dot)}
+                    />
+                    {column.label}
+                  </h2>
                   <Badge variant="muted">{columnItems.length}</Badge>
                 </div>
                 <div className="space-y-3">
@@ -475,6 +472,36 @@ export function ActionBoard({
         confirmLabel="Revoke link"
         destructive
       />
+
+      <Modal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        title="Share action board"
+        description="Share a read-only board link with your team."
+      >
+        <div className="space-y-3">
+          <CopyButton
+            value=""
+            label="Copy share link"
+            onClickValue={copyShareValue}
+            onCopied={() => toast("Share link copied.", "success")}
+          />
+          {share ? (
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => void regenerateShare()}>
+                Regenerate link
+              </Button>
+              <Button variant="outline" onClick={() => setRevokeShareOpen(true)}>
+                Revoke link
+              </Button>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Create a share link first, then manage or revoke access from here.
+            </p>
+          )}
+        </div>
+      </Modal>
     </>
   );
 }
@@ -522,14 +549,15 @@ function ActionCard({
     <Card
       onClick={onClick}
       className={cn(
-        "transition-colors",
-        onClick && "cursor-pointer hover:border-primary/50",
+        "transition-all",
+        onClick && "cursor-pointer hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md",
+        overdue && "border-l-2 border-l-destructive",
       )}
     >
       <CardContent className="space-y-3 p-4">
         <div className="flex items-start justify-between gap-2">
           <p className="text-sm font-medium">{item.title}</p>
-          {overdue ? <Badge variant="default">Overdue</Badge> : null}
+          {overdue ? <Badge variant="overdue">Overdue</Badge> : null}
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
@@ -539,9 +567,18 @@ function ActionCard({
           <Badge variant={PRIORITY_BADGE[item.priority]}>
             {PRIORITY_LABELS[item.priority]}
           </Badge>
-          {item.dueDate ? <span>Due {formatDueDate(item.dueDate)}</span> : null}
+          {item.dueDate ? (
+            <span
+              className={cn(
+                "retro-timer",
+                overdue && "font-semibold text-destructive",
+              )}
+            >
+              Due {formatDueDate(item.dueDate)}
+            </span>
+          ) : null}
         </div>
-        <p className="text-[11px] text-muted-foreground">From {retroLabel}</p>
+        <p className="retro-meta text-[10px]">From {retroLabel}</p>
       </CardContent>
     </Card>
   );

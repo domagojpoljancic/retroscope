@@ -1,7 +1,12 @@
-import Link from "next/link";
+"use client";
 
-import { Badge } from "@/components/ui/badge";
-import { DEV_NAV_ITEMS, PRODUCT } from "@/lib/constants";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { PlusCircle } from "lucide-react";
+
+import { BrandMark } from "@/components/layout/brand-mark";
+import { Button } from "@/components/ui/button";
+import { NAV_ITEMS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 type SiteHeaderProps = {
@@ -9,6 +14,8 @@ type SiteHeaderProps = {
 };
 
 export function SiteHeader({ className }: SiteHeaderProps) {
+  const pathname = usePathname();
+
   return (
     <header
       className={cn(
@@ -17,43 +24,46 @@ export function SiteHeader({ className }: SiteHeaderProps) {
       )}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link href="/" className="group flex min-w-0 items-center gap-3">
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-sm">
-            R
-          </span>
-          <span className="min-w-0">
-            <span className="block truncate text-base font-semibold tracking-tight text-foreground">
-              {PRODUCT.name}
-            </span>
-            <span className="block truncate text-xs text-muted-foreground">
-              {PRODUCT.tagline}
-            </span>
-          </span>
+        <Link href="/" className="group min-w-0">
+          <BrandMark showTagline />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">
-          {DEV_NAV_ITEMS.map((item) => (
+          {NAV_ITEMS.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-secondary-foreground"
+              className={cn(
+                "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                pathname.startsWith(item.href)
+                  ? "bg-secondary text-secondary-foreground"
+                  : "text-muted-foreground hover:bg-secondary hover:text-secondary-foreground",
+              )}
             >
               {item.label}
             </Link>
           ))}
         </nav>
 
-        <Badge variant="muted" className="hidden sm:inline-flex">
-          Prototype
-        </Badge>
+        <Button size="sm" asChild className="hidden sm:inline-flex">
+          <Link href="/sessions/new">
+            <PlusCircle />
+            New retro
+          </Link>
+        </Button>
       </div>
 
       <nav className="flex gap-1 overflow-x-auto border-t border-border/60 px-4 py-2 md:hidden">
-        {DEV_NAV_ITEMS.map((item) => (
+        {NAV_ITEMS.map((item) => (
           <Link
             key={item.href}
             href={item.href}
-            className="shrink-0 rounded-lg bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground"
+            className={cn(
+              "shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium",
+              pathname.startsWith(item.href)
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground",
+            )}
           >
             {item.label}
           </Link>

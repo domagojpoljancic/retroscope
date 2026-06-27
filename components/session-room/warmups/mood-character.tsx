@@ -94,20 +94,28 @@ export function MoodCharacterWarmup() {
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <Card>
+      <Card className="scope-frame overflow-hidden">
         <CardContent className="space-y-4 p-4">
           {viewer.participantId ? (
             <>
+              <div className="flex items-center justify-between">
+                <span className="vhs-label">
+                  <Sparkles className="size-3" />
+                  Mood Station
+                </span>
+                <span className="retro-meta">Build your avatar</span>
+              </div>
               <div className="flex items-center justify-center">
                 <div
-                  className="relative flex size-32 items-center justify-center rounded-2xl bg-secondary text-5xl"
+                  className="retro-gradient-panel scanlines relative flex size-40 items-center justify-center rounded-2xl text-6xl shadow-md"
                   title="Character preview"
                 >
-                  <span className="absolute left-2 top-2 text-xl">
+                  <span className="absolute inset-[6px] rounded-xl border border-white/30" />
+                  <span className="absolute left-3 top-3 text-xl">
                     {partEmoji(background)}
                   </span>
-                  <span>{partEmoji(face)}</span>
-                  <span className="absolute bottom-2 right-2 text-xl">
+                  <span className="relative drop-shadow-sm">{partEmoji(face)}</span>
+                  <span className="absolute bottom-3 right-3 text-xl">
                     {partEmoji(accessory)}
                   </span>
                 </div>
@@ -167,9 +175,10 @@ export function MoodCharacterWarmup() {
 
       <Card>
         <CardContent className="space-y-3 p-4">
-          <p className="text-sm font-medium">
-            Submitted moods ({responses.length})
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium">Submitted moods</p>
+            <span className="retro-meta">{responses.length} in</span>
+          </div>
           {responses.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               No moods submitted yet.
@@ -184,9 +193,9 @@ export function MoodCharacterWarmup() {
                 return (
                   <div
                     key={response.id}
-                    className="flex flex-col items-center gap-2 rounded-xl border border-border bg-background p-3 text-center"
+                    className="flex flex-col items-center gap-2 rounded-xl border border-border bg-background p-3 text-center transition-shadow hover:shadow-sm"
                   >
-                    <div className="relative flex size-16 items-center justify-center rounded-xl bg-secondary text-3xl">
+                    <div className="retro-gradient-panel relative flex size-16 items-center justify-center rounded-xl text-3xl shadow-sm">
                       <span className="absolute left-1 top-1 text-sm">
                         {partEmoji(data.characterParts.background)}
                       </span>
@@ -241,11 +250,12 @@ function PartSelector({
             type="button"
             onClick={() => onChange(part.id)}
             title={part.label}
+            aria-pressed={value === part.id}
             className={cn(
-              "flex size-10 items-center justify-center rounded-lg border text-xl transition-colors",
+              "flex size-11 items-center justify-center rounded-xl border text-xl transition-all",
               value === part.id
-                ? "border-primary bg-primary/10"
-                : "border-border bg-background hover:bg-accent/40",
+                ? "scale-105 border-primary bg-primary/10 shadow-sm ring-2 ring-primary/40"
+                : "border-border bg-background hover:-translate-y-0.5 hover:border-primary/40 hover:bg-accent/40",
             )}
           >
             {part.emoji}

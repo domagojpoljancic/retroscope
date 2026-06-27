@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { Play } from "lucide-react";
 
-import { FacilitatorPanel } from "@/components/session-room/facilitator-panel";
-import { PhaseHeading, WaitingState } from "@/components/session-room/phase-shell";
+import { FacilitatorCommandBar } from "@/components/session-room/command-bar";
+import { PhaseMission } from "@/components/session-room/phase-mission";
+import { WaitingState } from "@/components/session-room/phase-shell";
 import { useRoom } from "@/components/session-room/session-room-context";
 import { InlineValidationMessage } from "@/components/ui-state/inline-validation-message";
 import { PermissionHint } from "@/components/ui-state/permission-hint";
@@ -88,7 +89,7 @@ export function VotingSetupPhase() {
   if (!viewer.isFacilitator) {
     return (
       <div className="space-y-4">
-        <PhaseHeading title="Voting setup" />
+        <PhaseMission phase="voting_setup" />
         <WaitingState description="The facilitator is configuring voting. Get ready to pick your top topics." />
       </div>
     );
@@ -96,10 +97,7 @@ export function VotingSetupPhase() {
 
   return (
     <div className="space-y-4">
-      <PhaseHeading
-        title="Voting setup"
-        description="Decide how many votes each person gets and how long voting lasts."
-      />
+      <PhaseMission phase="voting_setup" isFacilitator />
 
       {targetCount === 0 ? (
         <PermissionHint message="No vote targets yet. Reveal and group cards before starting voting." />
@@ -167,12 +165,24 @@ export function VotingSetupPhase() {
         </CardContent>
       </Card>
 
-      <FacilitatorPanel>
-        <Button onClick={() => void start()} disabled={starting || targetCount === 0}>
-          <Play />
-          {starting ? "Starting…" : "Start voting"}
-        </Button>
-      </FacilitatorPanel>
+      <FacilitatorCommandBar
+        hint="Start voting to open the ballot for everyone."
+        status={
+          <span className="retro-meta">
+            {targetCount} target{targetCount === 1 ? "" : "s"} · {votes} vote
+            {votes === 1 ? "" : "s"} each
+          </span>
+        }
+        primary={
+          <Button
+            onClick={() => void start()}
+            disabled={starting || targetCount === 0}
+          >
+            <Play />
+            {starting ? "Starting…" : "Start voting"}
+          </Button>
+        }
+      />
     </div>
   );
 }

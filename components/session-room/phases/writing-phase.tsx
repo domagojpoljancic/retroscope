@@ -10,22 +10,24 @@ import {
   SquareCheckBig,
   TimerReset,
   Trash2,
+  Users,
 } from "lucide-react";
 
 import { BoardCard } from "@/components/session-room/board-card";
-import { FacilitatorPanel } from "@/components/session-room/facilitator-panel";
-import { PhaseHeading } from "@/components/session-room/phase-shell";
+import { FacilitatorCommandBar } from "@/components/session-room/command-bar";
+import { PhaseMission } from "@/components/session-room/phase-mission";
 import { TimerDisplay } from "@/components/session-room/timer-display";
 import { useRoom } from "@/components/session-room/session-room-context";
 import { ConfirmDialog } from "@/components/ui-state/confirm-dialog";
-import { EmptyState } from "@/components/ui-state/empty-state";
 import { InlineValidationMessage } from "@/components/ui-state/inline-validation-message";
 import { PermissionHint } from "@/components/ui-state/permission-hint";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Menu, MenuItem, MenuLabel, MenuSeparator } from "@/components/ui/menu";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
+import { canEditCard, canRevealCard, isCardOwner } from "@/lib/card-permissions";
 import { revealCard, revealCards } from "@/lib/card-reveal";
 import { getParticipantContext } from "@/lib/participant-context";
 import { isTimerExpired } from "@/lib/timer";
@@ -49,6 +51,8 @@ export function WritingPhase() {
     (card) =>
       card.participantId === viewer.participantId && !card.isRevealed,
   );
+
+  const hiddenCount = cards.filter((card) => !card.isRevealed).length;
 
   const unrevealedByParticipant = participants
     .map((participant) => ({
@@ -77,12 +81,12 @@ export function WritingPhase() {
 
   return (
     <div className="space-y-4">
-      <PhaseHeading
-        title="Writing"
-        description="Add your cards privately. Reveal them when you're ready — hidden cards stay obfuscated for everyone else."
-        action={
+      <PhaseMission
+        phase="writing"
+        isFacilitator={viewer.isFacilitator}
+        aside={
           timer ? (
-            <TimerDisplay timer={timer} />
+            <TimerDisplay timer={timer} className="h-9 px-3 text-base" />
           ) : (
             <span className="text-sm text-muted-foreground">Timer starting…</span>
           )
@@ -90,7 +94,7 @@ export function WritingPhase() {
       />
 
       {timerEnded ? (
-        <PermissionHint message="Writing time has ended. The facilitator may move to reveal & group." />
+        <PermissionHint message="Writing time has ended. The facilitator can move to reveal & group." />
       ) : null}
 
       {!viewer.participantId && !viewer.isFacilitator ? (
@@ -121,62 +125,103 @@ export function WritingPhase() {
         ))}
       </div>
 
-      {viewer.isFacilitator && unrevealedByParticipant.length > 0 ? (
-        <Card>
-          <CardContent className="space-y-2 p-4">
-            <p className="text-sm font-medium">Reveal all cards from a participant</p>
-            <div className="flex flex-wrap gap-2">
-              {unrevealedByParticipant.map(({ participant, hidden }) => (
-                <Button
-                  key={participant.id}
-                  size="sm"
-                  variant="outline"
-                  onClick={() => revealCards(hidden, session.id)}
-                >
-                  <Eye />
-                  {participantName(participant.id)} ({hidden.length})
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
-
       {viewer.isFacilitator ? (
-        <FacilitatorPanel>
-          {timer?.status === "running" ? (
-            <Button
-              variant="outline"
-              onClick={() => void api.pauseTimer(timer.id)}
-            >
-              <Pause />
-              Pause
+        <FacilitatorCommandBar
+          hint="End writing when the team is done."
+          status={
+            <>
+              {timer ? <TimerDisplay timer={timer} /> : null}
+              <span className="retro-meta inline-flex items-center gap-1.5">
+                <Eye className="size-3.5 text-primary" />
+                {hiddenCount} hidden · {cards.length - hiddenCount} revealed
+              </span>
+            </>
+          }
+          secondary={
+            <>
+              {timer?.status === "running" ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void api.pauseTimer(timer.id)}
+                >
+                  <Pause />
+                  Pause
+                </Button>
+              ) : timer?.status === "paused" ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void api.resumeTimer(timer.id)}
+                >
+                  <Play />
+                  Resume
+                </Button>
+              ) : null}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={addTime}
+                disabled={!timer}
+              >
+                <TimerReset />
+                +1 min
+              </Button>
+              <Menu
+                label="Reveal"
+                icon={<Eye />}
+                openUp
+                align="end"
+              >
+                <MenuItem
+                  icon={<Eye />}
+                  onSelect={() => void api.revealSessionCards(session.id)}
+                >
+                  Reveal all cards
+                </MenuItem>
+                <MenuSeparator />
+                <MenuLabel>By column</MenuLabel>
+                {columns.map((column) => {
+                  const columnHidden = cards.filter(
+                    (card) =>
+                      card.frameworkColumn === column.id && !card.isRevealed,
+                  );
+                  return (
+                    <MenuItem
+                      key={column.id}
+                      icon={<Eye />}
+                      disabled={columnHidden.length === 0}
+                      onSelect={() => revealCards(columnHidden, session.id)}
+                    >
+                      {column.label} ({columnHidden.length})
+                    </MenuItem>
+                  );
+                })}
+                {unrevealedByParticipant.length > 0 ? (
+                  <>
+                    <MenuSeparator />
+                    <MenuLabel>By participant</MenuLabel>
+                    {unrevealedByParticipant.map(({ participant, hidden }) => (
+                      <MenuItem
+                        key={participant.id}
+                        icon={<Users />}
+                        onSelect={() => revealCards(hidden, session.id)}
+                      >
+                        {participantName(participant.id)} ({hidden.length})
+                      </MenuItem>
+                    ))}
+                  </>
+                ) : null}
+              </Menu>
+            </>
+          }
+          primary={
+            <Button onClick={endWriting}>
+              <SquareCheckBig />
+              End writing
             </Button>
-          ) : timer?.status === "paused" ? (
-            <Button
-              variant="outline"
-              onClick={() => void api.resumeTimer(timer.id)}
-            >
-              <Play />
-              Resume
-            </Button>
-          ) : null}
-          <Button variant="outline" onClick={addTime} disabled={!timer}>
-            <TimerReset />
-            +1 min
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => void api.revealSessionCards(session.id)}
-          >
-            <Eye />
-            Reveal all cards
-          </Button>
-          <Button onClick={endWriting}>
-            <SquareCheckBig />
-            End writing
-          </Button>
-        </FacilitatorPanel>
+          }
+        />
       ) : null}
     </div>
   );
@@ -284,60 +329,93 @@ function WritingColumn({
             style={{ backgroundColor: column.accentColor }}
           />
           <h3 className="text-sm font-semibold">{column.label}</h3>
-          <span className="text-xs text-muted-foreground">{cards.length}</span>
+          <span className="retro-meta ml-auto text-[10px]">
+            {cards.length} {cards.length === 1 ? "card" : "cards"}
+          </span>
         </div>
 
-        <div className="space-y-2">
-          {cards.map((card) => {
-            const isOwner = card.participantId === viewer.participantId;
-            const canEdit = isOwner && !card.isRevealed;
-            if (editingId === card.id) {
-              return (
-                <div key={card.id} className="space-y-2">
-                  <Textarea
-                    value={editText}
-                    onChange={(event) => {
-                      setEditText(event.target.value);
-                      if (editError) {
-                        setEditError(null);
-                      }
-                    }}
-                    autoFocus
-                  />
-                  <InlineValidationMessage message={editError} />
-                  <div className="flex gap-1.5">
-                    <Button size="sm" onClick={() => saveEdit(card.id)}>
-                      Save
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setEditingId(null);
-                        setEditError(null);
+        {cards.length > 0 ? (
+          <div className="space-y-2">
+            {cards.map((card) => {
+              const isOwner = isCardOwner(card, viewer);
+              const canEdit = canEditCard(card, viewer);
+              if (editingId === card.id) {
+                return (
+                  <div key={card.id} className="space-y-2">
+                    <Textarea
+                      value={editText}
+                      onChange={(event) => {
+                        setEditText(event.target.value);
+                        if (editError) {
+                          setEditError(null);
+                        }
                       }}
-                    >
-                      Cancel
-                    </Button>
+                      autoFocus
+                    />
+                    <InlineValidationMessage message={editError} />
+                    <div className="flex gap-1.5">
+                      <Button size="sm" onClick={() => saveEdit(card.id)}>
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditingId(null);
+                          setEditError(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              );
-            }
-            return (
-              <BoardCard
-                key={card.id}
-                card={card}
-                viewerIsOwner={isOwner}
-                locked={card.isRevealed}
-                accentColor={column.accentColor}
-                authorName={
-                  session.anonymousCards
-                    ? null
-                    : participantName(card.participantId)
-                }
-              >
-                {canEdit ? (
-                  <>
+                );
+              }
+              return (
+                <BoardCard
+                  key={card.id}
+                  card={card}
+                  viewerIsOwner={isOwner}
+                  locked={card.isRevealed}
+                  accentColor={column.accentColor}
+                  authorName={
+                    session.anonymousCards
+                      ? null
+                      : participantName(card.participantId)
+                  }
+                >
+                  {canEdit ? (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => revealCard(card.id, session.id)}
+                      >
+                        <Eye />
+                        Reveal
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditingId(card.id);
+                          setEditText(card.text);
+                        }}
+                      >
+                        <Pencil />
+                        Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setDeleteTarget(card)}
+                      >
+                        <Trash2 />
+                        Delete
+                      </Button>
+                    </>
+                  ) : null}
+                  {!isOwner && canRevealCard(card, viewer) ? (
                     <Button
                       size="sm"
                       variant="outline"
@@ -346,50 +424,15 @@ function WritingColumn({
                       <Eye />
                       Reveal
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setEditingId(card.id);
-                        setEditText(card.text);
-                      }}
-                    >
-                      <Pencil />
-                      Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setDeleteTarget(card)}
-                    >
-                      <Trash2 />
-                      Delete
-                    </Button>
-                  </>
-                ) : null}
-                {viewer.isFacilitator && !isOwner && !card.isRevealed ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => revealCard(card.id, session.id)}
-                  >
-                    <Eye />
-                    Reveal
-                  </Button>
-                ) : null}
-              </BoardCard>
-            );
-          })}
-          {cards.length === 0 ? (
-            <EmptyState
-              compact
-              description={`No cards in ${column.label} yet.`}
-            />
-          ) : null}
-        </div>
+                  ) : null}
+                </BoardCard>
+              );
+            })}
+          </div>
+        ) : null}
 
         {canAdd ? (
-          <div className="space-y-2 border-t border-border/60 pt-2">
+          <div className="space-y-2">
             <Textarea
               placeholder={`Add to ${column.label}…`}
               value={draft}
@@ -407,27 +450,15 @@ function WritingColumn({
               }}
             />
             <InlineValidationMessage message={draftError} />
-            <Button
-              size="sm"
-              className="w-full"
-              onClick={addCard}
-            >
+            <Button size="sm" className="w-full" onClick={addCard}>
               <Plus />
               Add card
             </Button>
           </div>
-        ) : null}
-
-        {viewer.isFacilitator ? (
-          <Button
-            size="sm"
-            variant="ghost"
-            className="w-full text-xs"
-            onClick={() => revealCards(cards, session.id)}
-          >
-            <Eye />
-            Reveal all in column
-          </Button>
+        ) : cards.length === 0 ? (
+          <p className="rounded-lg border border-dashed border-border/70 px-3 py-2 text-center text-xs text-muted-foreground">
+            No cards yet.
+          </p>
         ) : null}
       </CardContent>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { getSessionSnapshotAction } from "@/app/actions/sessions";
 import { subscribeToCoreSessionRealtime } from "@/lib/realtime/subscriptions";
@@ -12,27 +12,33 @@ export function useLiveSession(sessionId: string): SessionSnapshot | null | unde
     isSupabaseMode() ? undefined : null,
   );
 
-  const refresh = useCallback(async () => {
-    if (!isSupabaseMode()) {
-      return;
-    }
-    const result = await getSessionSnapshotAction(sessionId);
-    if (result.ok) {
-      setSnapshot(result.data);
-    } else {
-      setSnapshot(null);
-    }
-  }, [sessionId]);
-
   useEffect(() => {
     if (!isSupabaseMode()) {
       return;
     }
-    void refresh();
-    return subscribeToCoreSessionRealtime(sessionId, () => {
-      void refresh();
+
+    let cancelled = false;
+
+    // The state update happens asynchronously after the awaited fetch resolves,
+    // so it is not a synchronous set-state-in-effect.
+    const sync = async () => {
+      const result = await getSessionSnapshotAction(sessionId);
+      if (cancelled) {
+        return;
+      }
+      setSnapshot(result.ok ? result.data : null);
+    };
+
+    void sync();
+    const unsubscribe = subscribeToCoreSessionRealtime(sessionId, () => {
+      void sync();
     });
-  }, [sessionId, refresh]);
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [sessionId]);
 
   return snapshot;
 }

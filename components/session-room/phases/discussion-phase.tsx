@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import {
-  ArrowRight,
+  CheckCircle2,
   Lightbulb,
   ListPlus,
   Send,
@@ -16,8 +16,8 @@ import {
   emptyActionForm,
   type ActionItemFormValues,
 } from "@/components/actions/action-item-dialog";
-import { FacilitatorPanel } from "@/components/session-room/facilitator-panel";
-import { PhaseHeading } from "@/components/session-room/phase-shell";
+import { FacilitatorCommandBar } from "@/components/session-room/command-bar";
+import { PhaseMission } from "@/components/session-room/phase-mission";
 import { useRoom } from "@/components/session-room/session-room-context";
 import { EmptyState } from "@/components/ui-state/empty-state";
 import { InlineValidationMessage } from "@/components/ui-state/inline-validation-message";
@@ -118,24 +118,23 @@ export function DiscussionPhase() {
 
   return (
     <div className="space-y-4">
-      <PhaseHeading
-        title="Discussion"
-        description="Work through the highest-voted topics and turn insights into owned action items."
-        action={
-          viewer.isFacilitator ? (
-            <Button onClick={() => setDialog({ mode: "create" })}>
-              <ListPlus />
-              New action item
-            </Button>
-          ) : undefined
+      <PhaseMission
+        phase="discussion"
+        isFacilitator={viewer.isFacilitator}
+        aside={
+          <Badge variant={actionItems.length > 0 ? "status" : "muted"}>
+            {actionItems.length} action item{actionItems.length === 1 ? "" : "s"}
+          </Badge>
         }
       />
 
-      <div className="flex items-center gap-2 rounded-xl border border-amber-300/50 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
-        <Lightbulb className="size-4 shrink-0" />
+      <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-4 py-2 text-sm text-muted-foreground">
+        <Lightbulb className="size-4 shrink-0 text-warning" />
         Aim for 1–3 final action items.
         {actionItems.length === 0 ? (
-          <span className="ml-1 font-medium">None captured yet.</span>
+          <span className="ml-1 font-medium text-foreground">
+            None captured yet.
+          </span>
         ) : null}
       </div>
 
@@ -243,6 +242,16 @@ export function DiscussionPhase() {
               <h3 className="text-sm font-semibold">
                 Final action items ({actionItems.length})
               </h3>
+              {viewer.isFacilitator ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setDialog({ mode: "create" })}
+                >
+                  <ListPlus />
+                  New
+                </Button>
+              ) : null}
             </div>
             {actionItems.length === 0 ? (
               <EmptyState
@@ -266,12 +275,31 @@ export function DiscussionPhase() {
       </div>
 
       {viewer.isFacilitator ? (
-        <FacilitatorPanel title="Wrap up">
-          <Button onClick={advance}>
-            Finish & view summary
-            <ArrowRight />
-          </Button>
-        </FacilitatorPanel>
+        <FacilitatorCommandBar
+          hint="Capture actions, then finish the retro."
+          status={
+            <span className="retro-meta">
+              {actionItems.length} action item
+              {actionItems.length === 1 ? "" : "s"} captured
+            </span>
+          }
+          secondary={
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDialog({ mode: "create" })}
+            >
+              <ListPlus />
+              Add action item
+            </Button>
+          }
+          primary={
+            <Button onClick={advance}>
+              <CheckCircle2 />
+              Finish retro
+            </Button>
+          }
+        />
       ) : null}
 
       {dialog?.mode === "create" ? (

@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
 
-import { FacilitatorPanel } from "@/components/session-room/facilitator-panel";
 import { useRoom } from "@/components/session-room/session-room-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -63,22 +62,31 @@ export function ThisOrThatWarmup() {
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="scope-frame overflow-hidden">
         <CardContent className="space-y-4 p-4">
-          <p className="text-center text-sm text-muted-foreground">
-            Prompt {promptIndex + 1} of {THIS_OR_THAT_PROMPTS.length}
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="flex items-center justify-between">
+            <span className="vhs-label">This · or · That</span>
+            <span className="retro-meta">
+              {String(promptIndex + 1).padStart(2, "0")} /{" "}
+              {String(THIS_OR_THAT_PROMPTS.length).padStart(2, "0")}
+            </span>
+          </div>
+          <div className="relative grid items-stretch gap-3 sm:grid-cols-[1fr_auto_1fr]">
             <ChoiceTile
               label={prompt.optionA}
+              tone="violet"
               count={countA}
               total={total}
               selected={mine === "a"}
               disabled={!viewer.participantId}
               onClick={() => choose("a")}
             />
+            <div className="hidden items-center justify-center sm:flex">
+              <span className="vhs-label">VS</span>
+            </div>
             <ChoiceTile
               label={prompt.optionB}
+              tone="teal"
               count={countB}
               total={total}
               selected={mine === "b"}
@@ -86,14 +94,14 @@ export function ThisOrThatWarmup() {
               onClick={() => choose("b")}
             />
           </div>
-          <p className="text-center text-xs text-muted-foreground">
-            {total} response{total === 1 ? "" : "s"}
+          <p className="retro-meta text-center">
+            {total} response{total === 1 ? "" : "s"} recorded
           </p>
         </CardContent>
       </Card>
 
       {viewer.isFacilitator ? (
-        <FacilitatorPanel>
+        <div className="flex justify-center">
           <Button
             variant="secondary"
             disabled={promptIndex >= THIS_OR_THAT_PROMPTS.length - 1}
@@ -106,7 +114,7 @@ export function ThisOrThatWarmup() {
             Next prompt
             <ArrowRight />
           </Button>
-        </FacilitatorPanel>
+        </div>
       ) : null}
     </div>
   );
@@ -114,6 +122,7 @@ export function ThisOrThatWarmup() {
 
 function ChoiceTile({
   label,
+  tone,
   count,
   total,
   selected,
@@ -121,6 +130,7 @@ function ChoiceTile({
   onClick,
 }: {
   label: string;
+  tone: "violet" | "teal";
   count: number;
   total: number;
   selected: boolean;
@@ -128,29 +138,55 @@ function ChoiceTile({
   onClick: () => void;
 }) {
   const pct = total === 0 ? 0 : Math.round((count / total) * 100);
+  const fill = tone === "violet" ? "bg-retro-violet/15" : "bg-retro-teal/15";
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
+      aria-pressed={selected}
       className={cn(
-        "relative overflow-hidden rounded-xl border p-5 text-left transition-colors disabled:cursor-not-allowed",
+        "relative overflow-hidden rounded-2xl border p-6 text-left transition-all disabled:cursor-not-allowed",
         selected
-          ? "border-primary ring-1 ring-primary"
-          : "border-border hover:bg-accent/40",
+          ? "border-transparent shadow-md ring-2 ring-primary [background:var(--retro-gradient)] [background-clip:padding-box]"
+          : "border-border hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-sm",
       )}
     >
       <div
-        className="absolute inset-y-0 left-0 bg-primary/10 transition-all"
+        className={cn(
+          "absolute inset-y-0 left-0 transition-all",
+          selected ? "bg-white/15" : fill,
+        )}
         style={{ width: `${pct}%` }}
         aria-hidden
       />
       <div className="relative flex items-center justify-between gap-2">
-        <span className="text-base font-semibold">{label}</span>
-        <span className="text-sm text-muted-foreground">
-          {count} · {pct}%
+        <span
+          className={cn(
+            "text-base font-semibold",
+            selected && "text-white",
+          )}
+        >
+          {label}
+        </span>
+        <span
+          className={cn(
+            "retro-timer text-sm",
+            selected ? "text-white/90" : "text-muted-foreground",
+          )}
+        >
+          {pct}%
         </span>
       </div>
+      <p
+        className={cn(
+          "retro-meta relative mt-1 text-[10px]",
+          selected ? "text-white/80" : undefined,
+        )}
+      >
+        {count} {count === 1 ? "vote" : "votes"}
+        {selected ? " · your pick" : ""}
+      </p>
     </button>
   );
 }

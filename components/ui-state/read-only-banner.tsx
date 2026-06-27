@@ -15,12 +15,15 @@ export function ReadOnlyBanner({
   return (
     <div
       className={cn(
-        "mb-6 flex items-center gap-2 rounded-xl border border-border bg-muted/60 px-4 py-3 text-sm text-muted-foreground",
+        "mb-6 flex items-center gap-3 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm font-medium text-warning-foreground",
         className,
       )}
       role="status"
     >
-      <Lock className="size-4 shrink-0" />
+      <span className="vhs-label bg-warning text-warning-foreground">
+        <Lock className="size-3" />
+        Read only
+      </span>
       {message}
     </div>
   );

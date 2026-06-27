@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 
 import { BoardCard } from "@/components/session-room/board-card";
-import { FacilitatorPanel } from "@/components/session-room/facilitator-panel";
-import { PhaseHeading } from "@/components/session-room/phase-shell";
+import { FacilitatorCommandBar } from "@/components/session-room/command-bar";
+import { PhaseMission } from "@/components/session-room/phase-mission";
 import { useRoom } from "@/components/session-room/session-room-context";
 import { ConfirmDialog } from "@/components/ui-state/confirm-dialog";
 import { EmptyState } from "@/components/ui-state/empty-state";
@@ -24,7 +24,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { api } from "@/lib/api";
+import { canGroupCards, canRevealCard, isCardOwner } from "@/lib/card-permissions";
 import { revealCard, revealCards } from "@/lib/card-reveal";
 import { getParticipantContext } from "@/lib/participant-context";
 import { PERMISSION_MESSAGES, validateGroupTitle } from "@/lib/validation";
@@ -46,6 +48,7 @@ export function RevealGroupPhase() {
   const [groupTitle, setGroupTitle] = useState("");
   const [groupTitleError, setGroupTitleError] = useState<string | null>(null);
   const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
+  const [groupingMode, setGroupingMode] = useState(false);
 
   const cards = store.cards.filter(
     (card) => card.sessionId === session.id && card.deletedAt === null,
@@ -59,9 +62,7 @@ export function RevealGroupPhase() {
     ) ?? null;
 
   const revealedCards = cards.filter((card) => card.isRevealed);
-  const canGroup =
-    viewer.isFacilitator ||
-    session.groupingPermission === "participants_allowed";
+  const canGroup = canGroupCards(session, viewer);
 
   const toggleSelect = (cardId: string) => {
     if (!canGroup) {
@@ -182,11 +183,19 @@ export function RevealGroupPhase() {
     setDeleteGroupId(null);
   };
 
+  const revealedCount = revealedCards.length;
+  const hiddenCount = cards.length - revealedCount;
+
   return (
     <div className="space-y-4">
-      <PhaseHeading
-        title="Reveal & group"
-        description="Reveal remaining cards and cluster related ideas into themes. Only revealed cards can be grouped."
+      <PhaseMission
+        phase="reveal_group"
+        isFacilitator={viewer.isFacilitator}
+        aside={
+          <span className="retro-meta">
+            {revealedCount} revealed · {hiddenCount} hidden
+          </span>
+        }
       />
 
       {!canGroup ? (
@@ -200,41 +209,63 @@ export function RevealGroupPhase() {
       ) : null}
 
       {canGroup ? (
-        <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
-            <p className="text-sm">
-              <span className="font-medium">{selected.size}</span> card
-              {selected.size === 1 ? "" : "s"} selected. Select revealed cards,
-              then create or add to a theme.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                onClick={() => void createGroup()}
-                disabled={selected.size < 1}
-              >
-                <FolderPlus />
-                Create theme
-              </Button>
-              {selected.size > 0 ? (
+        <Card className={cn("border-primary/30", groupingMode && "bg-primary/5")}>
+          <CardContent className="space-y-3 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="vhs-label">Grouping mode</span>
+                <Switch
+                  checked={groupingMode}
+                  onCheckedChange={(value) => setGroupingMode(value)}
+                  aria-label="Toggle grouping mode"
+                />
+                <span className="text-sm text-muted-foreground">
+                  {groupingMode ? "On" : "Off"}
+                </span>
+              </div>
+              <span className="text-sm">
+                <span className="font-semibold text-foreground">
+                  {selected.size}
+                </span>{" "}
+                card{selected.size === 1 ? "" : "s"} selected
+              </span>
+            </div>
+
+            {groupingMode ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => void createGroup()}
+                  disabled={selected.size < 1}
+                >
+                  <FolderPlus />
+                  Create theme{selected.size > 0 ? ` (${selected.size})` : ""}
+                </Button>
+                {selected.size > 0 ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setSelected(new Set())}
+                  >
+                    Clear selection
+                  </Button>
+                ) : null}
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => setSelected(new Set())}
+                  className="ml-auto text-muted-foreground"
+                  onClick={() => void handleUndo()}
+                  disabled={!recentEvent}
                 >
-                  Clear
+                  <Undo2 />
+                  Undo last
                 </Button>
-              ) : null}
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => void handleUndo()}
-                disabled={!recentEvent}
-              >
-                <Undo2 />
-                Undo
-              </Button>
-            </div>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Turn on grouping mode to select revealed cards and build themes.
+              </p>
+            )}
           </CardContent>
         </Card>
       ) : null}
@@ -380,9 +411,8 @@ export function RevealGroupPhase() {
                 </div>
                 <div className="space-y-2">
                   {columnCards.map((card) => {
-                    const isOwner =
-                      card.participantId === viewer.participantId;
-                    const selectable = canGroup && card.isRevealed;
+                    const isOwner = isCardOwner(card, viewer);
+                    const selectable = canGroup && card.isRevealed && groupingMode;
                     return (
                       <BoardCard
                         key={card.id}
@@ -399,8 +429,7 @@ export function RevealGroupPhase() {
                             : participantName(card.participantId)
                         }
                       >
-                        {!card.isRevealed &&
-                        (isOwner || viewer.isFacilitator) ? (
+                        {canRevealCard(card, viewer) ? (
                           <Button
                             size="sm"
                             variant="outline"
@@ -426,19 +455,32 @@ export function RevealGroupPhase() {
       </div>
 
       {viewer.isFacilitator ? (
-        <FacilitatorPanel>
-          <Button
-            variant="outline"
-            onClick={() => revealCards(cards, session.id)}
-          >
-            <Eye />
-            Reveal all cards
-          </Button>
-          <Button onClick={advance}>
-            <ArrowRight />
-            Continue to voting setup
-          </Button>
-        </FacilitatorPanel>
+        <FacilitatorCommandBar
+          hint="Reveal and group, then continue to voting."
+          status={
+            <span className="retro-meta">
+              {groups.length} theme{groups.length === 1 ? "" : "s"} ·{" "}
+              {revealedCount} revealed
+            </span>
+          }
+          secondary={
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => revealCards(cards, session.id)}
+              disabled={hiddenCount === 0}
+            >
+              <Eye />
+              Reveal all cards
+            </Button>
+          }
+          primary={
+            <Button onClick={advance}>
+              <ArrowRight />
+              Continue to voting
+            </Button>
+          }
+        />
       ) : null}
 
       <ConfirmDialog

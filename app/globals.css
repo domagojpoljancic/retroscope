@@ -1,24 +1,33 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f7ff;
-  --foreground: #1e1b4b;
+  --background: #f5f3ff;
+  --foreground: #14172e;
   --card: #ffffff;
-  --card-foreground: #1e1b4b;
-  --primary: #6366f1;
+  --card-foreground: #14172e;
+  --primary: #5b5fe8;
   --primary-foreground: #ffffff;
-  --secondary: #eef2ff;
-  --secondary-foreground: #3730a3;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #fff7ed;
-  --accent-foreground: #9a3412;
-  --border: #e2e8f0;
-  --ring: #6366f1;
-  --retro-teal: #14b8a6;
-  --retro-coral: #fb7185;
+  --secondary: #eceffd;
+  --secondary-foreground: #2f3674;
+  --muted: #edf0fb;
+  --muted-foreground: #5f6585;
+  --accent: #e6fbff;
+  --accent-foreground: #0b5f6e;
+  --border: #d9deef;
+  --ring: #5b5fe8;
+  --retro-teal: #0fb5c4;
+  --retro-coral: #fb5a83;
+  --retro-violet: #8b5cf6;
+  --warning: #f59e0b;
+  --warning-foreground: #7c4a02;
   --destructive: #e11d48;
   --destructive-foreground: #ffffff;
+
+  /* Retro brand gradients + glows */
+  --retro-gradient: linear-gradient(120deg, #5b5fe8 0%, #8b5cf6 45%, #fb5a83 100%);
+  --retro-gradient-cool: linear-gradient(120deg, #5b5fe8 0%, #0fb5c4 100%);
+  --retro-grid-line: rgba(91, 95, 232, 0.10);
+  --retro-glow: rgba(139, 92, 246, 0.35);
 }
 
 @theme inline {
@@ -38,6 +47,9 @@
   --color-ring: var(--ring);
   --color-retro-teal: var(--retro-teal);
   --color-retro-coral: var(--retro-coral);
+  --color-retro-violet: var(--retro-violet);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --font-sans: var(--font-geist-sans);
@@ -46,22 +58,32 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0f172a;
-    --foreground: #e2e8f0;
-    --card: #1e293b;
+    --background: #0d1022;
+    --foreground: #e8ecff;
+    --card: #181f3a;
     --card-foreground: #f8fafc;
-    --primary: #818cf8;
-    --primary-foreground: #0f172a;
-    --secondary: #1e293b;
-    --secondary-foreground: #c7d2fe;
-    --muted: #1e293b;
-    --muted-foreground: #94a3b8;
-    --accent: #312e81;
-    --accent-foreground: #fde68a;
-    --border: #334155;
-    --ring: #818cf8;
+    --primary: #8c8ff8;
+    --primary-foreground: #0d1022;
+    --secondary: #222a47;
+    --secondary-foreground: #d1d9ff;
+    --muted: #222a47;
+    --muted-foreground: #9aa3c4;
+    --accent: #123040;
+    --accent-foreground: #a9f5f0;
+    --border: #32405d;
+    --ring: #8c8ff8;
+    --retro-teal: #3ad0dd;
+    --retro-coral: #ff7d9c;
+    --retro-violet: #a78bfa;
+    --warning: #fbbf24;
+    --warning-foreground: #1b1403;
     --destructive: #fb7185;
-    --destructive-foreground: #0f172a;
+    --destructive-foreground: #0d1022;
+
+    --retro-gradient: linear-gradient(120deg, #6d70f0 0%, #a78bfa 45%, #ff7d9c 100%);
+    --retro-gradient-cool: linear-gradient(120deg, #6d70f0 0%, #3ad0dd 100%);
+    --retro-grid-line: rgba(140, 143, 248, 0.12);
+    --retro-glow: rgba(167, 139, 250, 0.4);
   }
 }
 
@@ -69,4 +91,233 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* ----------------------------------------------------------------------------
+   Retroscope retro design language
+   Reusable, controlled utilities. Prefer these over ad-hoc one-off styles.
+---------------------------------------------------------------------------- */
+
+/* Faint synthwave grid. Apply to a positioned container. */
+.retro-grid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(to right, var(--retro-grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--retro-grid-line) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
+}
+
+/* Horizon grid that converges, evoking an 80s sunset floor. */
+.retro-horizon::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(to right, var(--retro-grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--retro-grid-line) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: radial-gradient(120% 80% at 50% -10%, black 0%, transparent 70%);
+}
+
+/* Subtle gradient wash panel. */
+.retro-gradient-panel {
+  background:
+    radial-gradient(130% 120% at 100% 0%, var(--retro-glow) 0%, transparent 45%),
+    var(--retro-gradient);
+}
+
+/* Soft neon outer glow for special panels. */
+.retro-glow {
+  box-shadow: 0 0 0 1px rgba(91, 95, 232, 0.18), 0 18px 50px -22px var(--retro-glow);
+}
+
+/* Neon accent left edge. */
+.neon-edge {
+  position: relative;
+}
+.neon-edge::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12%;
+  bottom: 12%;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--retro-gradient);
+  box-shadow: 0 0 10px -1px var(--retro-glow);
+}
+
+/* VHS / tape label: mono, uppercase, tracked-out, with a torn-tape feel. */
+.vhs-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 0.35rem;
+  background: var(--retro-gradient);
+  color: #fff;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
+}
+
+/* Quiet mono metadata label (phases, codes, counts). */
+.retro-meta {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+/* Retro digital timer readout. */
+.retro-timer {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sparing scanline overlay for special framed panels. */
+.scanlines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(20, 23, 46, 0.05) 0px,
+    rgba(20, 23, 46, 0.05) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+}
+
+/* Retro monitor / scope frame for hero or feature panels. */
+.scope-frame {
+  position: relative;
+  border-radius: 1.25rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4), 0 22px 60px -30px var(--retro-glow);
+}
+
+/* Scope scan line: a slow vertical sweep evoking a radar / lens scan. */
+@keyframes scope-scan {
+  0% {
+    transform: translateY(-120%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(240%);
+    opacity: 0;
+  }
+}
+.scope-scan {
+  animation: scope-scan 3.6s ease-in-out infinite;
+}
+
+/* Horizontal time-scan line for hero/session headers. */
+@keyframes time-scan {
+  0% {
+    left: -30%;
+  }
+  100% {
+    left: 130%;
+  }
+}
+.time-scan::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 28%;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--retro-glow),
+    transparent
+  );
+  opacity: 0.5;
+  animation: time-scan 6s linear infinite;
+}
+
+/* Standalone scope reticle mark (lens + crosshair) for empty states/accents. */
+.scope-reticle {
+  position: relative;
+  border-radius: 9999px;
+  border: 1px solid var(--border);
+  background: radial-gradient(
+    circle at 50% 38%,
+    var(--retro-glow) 0%,
+    transparent 60%
+  );
+}
+.scope-reticle::before,
+.scope-reticle::after {
+  content: "";
+  position: absolute;
+  background: var(--retro-grid-line);
+}
+.scope-reticle::before {
+  left: 12%;
+  right: 12%;
+  top: 50%;
+  height: 1px;
+  transform: translateY(-50%);
+}
+.scope-reticle::after {
+  top: 12%;
+  bottom: 12%;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+}
+
+/* "Redacted transmission" treatment for obfuscated cards. */
+.redacted {
+  position: relative;
+  overflow: hidden;
+}
+.redacted::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(91, 95, 232, 0.08) 0px,
+    rgba(91, 95, 232, 0.08) 6px,
+    transparent 6px,
+    transparent 12px
+  );
+}
+
+/* Small Memphis-style geometric accent dot grid / shapes. */
+.memphis-dots {
+  background-image: radial-gradient(var(--retro-grid-line) 1.5px, transparent 1.5px);
+  background-size: 14px 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }

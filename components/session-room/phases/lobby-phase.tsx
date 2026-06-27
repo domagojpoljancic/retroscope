@@ -2,8 +2,9 @@
 
 import { Play, SkipForward } from "lucide-react";
 
-import { FacilitatorPanel } from "@/components/session-room/facilitator-panel";
-import { PhaseHeading, WaitingState } from "@/components/session-room/phase-shell";
+import { FacilitatorCommandBar } from "@/components/session-room/command-bar";
+import { PhaseMission } from "@/components/session-room/phase-mission";
+import { WaitingState } from "@/components/session-room/phase-shell";
 import { useRoom } from "@/components/session-room/session-room-context";
 import { EmptyState } from "@/components/ui-state/empty-state";
 import { useToast } from "@/components/ui/toast";
@@ -47,9 +48,14 @@ export function LobbyPhase() {
 
   return (
     <div className="space-y-4">
-      <PhaseHeading
-        title="Lobby"
-        description="Participants are joining. Review the setup, then start the retro when the team is ready."
+      <PhaseMission
+        phase="lobby"
+        isFacilitator={viewer.isFacilitator}
+        aside={
+          <span className="retro-meta">
+            {participants.length} in the room
+          </span>
+        }
       />
 
       <Card>
@@ -103,22 +109,34 @@ export function LobbyPhase() {
       ) : null}
 
       {viewer.isFacilitator ? (
-        <FacilitatorPanel>
-          <CopyButton
-            value={joinUrl}
-            label="Copy invite link"
-            variant="outline"
-            onCopied={onCopied}
-          />
-          <Button onClick={() => goToPhase("warmup")}>
-            <Play />
-            Start warm-up
-          </Button>
-          <Button variant="secondary" onClick={() => goToPhase(afterWarmup)}>
-            <SkipForward />
-            Skip warm-up
-          </Button>
-        </FacilitatorPanel>
+        <FacilitatorCommandBar
+          hint="Start the warm-up when the team is ready."
+          secondary={
+            <>
+              <CopyButton
+                value={joinUrl}
+                label="Copy invite link"
+                variant="outline"
+                size="sm"
+                onCopied={onCopied}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPhase(afterWarmup)}
+              >
+                <SkipForward />
+                Skip warm-up
+              </Button>
+            </>
+          }
+          primary={
+            <Button onClick={() => goToPhase("warmup")}>
+              <Play />
+              Start warm-up
+            </Button>
+          }
+        />
       ) : (
         <WaitingState description="The facilitator will start the session shortly." />
       )}

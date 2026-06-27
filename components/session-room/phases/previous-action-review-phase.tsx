@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { ArrowRight, Check, CircleDot, Forward } from "lucide-react";
 
-import { FacilitatorPanel } from "@/components/session-room/facilitator-panel";
-import { PhaseHeading } from "@/components/session-room/phase-shell";
+import { FacilitatorCommandBar } from "@/components/session-room/command-bar";
+import { PhaseMission } from "@/components/session-room/phase-mission";
 import { useRoom } from "@/components/session-room/session-room-context";
 import { useToast } from "@/components/ui/toast";
 import { Avatar } from "@/components/ui/avatar";
@@ -48,9 +48,10 @@ export function PreviousActionReviewPhase() {
 
   return (
     <div className="space-y-4">
-      <PhaseHeading
-        title="Previous action review"
-        description="Check in on open commitments from earlier retros before reflecting on this sprint."
+      <PhaseMission
+        phase="previous_action_review"
+        isFacilitator={viewer.isFacilitator}
+        aside={<span className="retro-meta">{items.length} open</span>}
       />
 
       <div className="space-y-3">
@@ -70,12 +71,15 @@ export function PreviousActionReviewPhase() {
       </div>
 
       {viewer.isFacilitator ? (
-        <FacilitatorPanel title="Move on">
-          <Button onClick={advance}>
-            Continue to writing
-            <ArrowRight />
-          </Button>
-        </FacilitatorPanel>
+        <FacilitatorCommandBar
+          hint="Continue once you've reviewed open actions."
+          primary={
+            <Button onClick={advance}>
+              Continue to writing
+              <ArrowRight />
+            </Button>
+          }
+        />
       ) : null}
     </div>
   );

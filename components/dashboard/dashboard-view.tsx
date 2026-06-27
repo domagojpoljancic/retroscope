@@ -22,9 +22,10 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/card";
+import { CopyButton } from "@/components/ui/copy-button";
+import { absoluteUrl } from "@/lib/clipboard";
 import { formatDueDate } from "@/lib/dates";
 import { getOpenActionItemsForReview } from "@/lib/action-items";
-import { isSupabaseMode } from "@/lib/backend-mode";
 import {
   FRAMEWORK_LABELS,
   PRIORITY_LABELS,
@@ -50,7 +51,6 @@ function isActiveSession(session: Session): boolean {
 
 export function DashboardView() {
   const store = useMockStore();
-  const mockMode = !isSupabaseMode();
 
   if (!store) {
     return <LoadingState />;
@@ -97,18 +97,12 @@ export function DashboardView() {
         }
       />
 
-      {mockMode ? (
-        <p className="mb-4 rounded-xl border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-          Running in local demo mode. Data is stored in memory and resets when you refresh.
-        </p>
-      ) : null}
-
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
           <SectionHeading
             icon={<CalendarDays className="size-5 text-primary" />}
-            title="Active & demo sessions"
-            description="Jump back into a live room or explore the demo."
+            title="Active sessions"
+            description="Jump back into a live room and keep the retro moving."
           />
           {activeSessions.length === 0 ? (
             <EmptyState
@@ -130,7 +124,6 @@ export function DashboardView() {
                   key={session.id}
                   session={session}
                   participants={participantCount(session.id)}
-                  isDemo={session.id === MOCK_IDS.session}
                 />
               ))}
             </div>
@@ -149,7 +142,6 @@ export function DashboardView() {
                     key={session.id}
                     session={session}
                     participants={participantCount(session.id)}
-                    isDemo={false}
                   />
                 ))}
               </div>
@@ -208,44 +200,59 @@ function SectionHeading({
   );
 }
 
+const STATUS_META: Record<
+  Session["status"],
+  { label: string; dot: string }
+> = {
+  draft: { label: "Draft", dot: "bg-muted-foreground/50" },
+  active: { label: "Live", dot: "bg-retro-teal" },
+  completed: { label: "Completed", dot: "bg-primary" },
+  archived: { label: "Archived", dot: "bg-muted-foreground/40" },
+};
+
 function SessionCard({
   session,
   participants,
-  isDemo,
 }: {
   session: Session;
   participants: number;
-  isDemo: boolean;
 }) {
   const phase = getPhaseDefinition(session.currentPhase);
+  const status = STATUS_META[session.status];
   return (
-    <Card className="flex flex-col">
-      <CardContent className="space-y-3 p-4 pt-6">
+    <Card className="neon-edge flex flex-col pl-1 transition-shadow hover:shadow-md">
+      <CardContent className="flex flex-1 flex-col gap-3 p-4 pt-5">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="text-lg font-semibold">{session.name}</h3>
-          {isDemo ? <Badge variant="secondary">Demo</Badge> : null}
+          <h3 className="text-lg font-semibold leading-tight">{session.name}</h3>
+          <span className="retro-meta inline-flex shrink-0 items-center gap-1.5 text-foreground">
+            <span className={`size-2 rounded-full ${status.dot}`} />
+            {status.label}
+          </span>
         </div>
-        <p className="text-sm text-muted-foreground">
+        <p className="retro-meta">
           {FRAMEWORK_LABELS[session.frameworkType]} ·{" "}
           {formatDueDate(session.createdAt)}
         </p>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="muted">{phase.label}</Badge>
+          <Badge variant="phase">{phase.label}</Badge>
           <span className="flex items-center gap-1 text-xs text-muted-foreground">
             <Users className="size-3.5" />
             {participants} participant{participants === 1 ? "" : "s"}
           </span>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="mt-auto flex flex-wrap gap-2 pt-1">
           <Button size="sm" asChild>
             <Link href={sessionRoute(session.id)}>
               Enter session
               <ArrowRight />
             </Link>
           </Button>
-          <Button size="sm" variant="outline" asChild>
-            <Link href={joinSessionRoute(session.sessionCode)}>Join link</Link>
-          </Button>
+          <CopyButton
+            value={absoluteUrl(joinSessionRoute(session.sessionCode))}
+            label="Copy join link"
+            variant="outline"
+            size="sm"
+          />
         </div>
       </CardContent>
     </Card>

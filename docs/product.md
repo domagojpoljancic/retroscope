@@ -18,7 +18,11 @@ The MVP delivers a complete retrospective flow in one product:
 5. Action items are captured during or after the retro.
 6. A summary closes the loop and feeds the Action Items Board.
 
-This foundation milestone sets up routing, layout, design tokens, folder structure, and placeholder pages only. No authentication, Supabase, or live session logic yet.
+The full flow above is implemented and runnable end to end. Retroscope runs in
+a **local mock mode** by default (all data in the browser's `localStorage`, no
+backend required) and switches to **Supabase mode** — real authentication,
+persistence, and realtime sync — when the Supabase environment variables are
+present. See the [README](../README.md) for setup and current MVP status.
 
 ## Core User Flow
 
@@ -42,15 +46,15 @@ This foundation milestone sets up routing, layout, design tokens, folder structu
 
 ## Warm-ups
 
-Warm-ups help teams arrive present and engaged before the retro itself. Planned options include:
+Warm-ups help teams arrive present and engaged before the retro itself. The
+warm-up activities currently implemented are:
 
-- One-word check-in
-- Weather check
-- Emoji mood board
-- Quick drawing prompt
-- Appreciation round
+- **Mood Character Builder** — build a small character that reflects your mood
+- **This or That** — quick either/or prompts
+- **Guessing Game** — a light guessing/trivia round
 
-Facilitators can skip warm-ups or choose a preset before starting the session.
+Facilitators choose a warm-up when creating the session. Additional warm-up
+formats are planned (see Future Features).
 
 ## Retro Frameworks
 
@@ -58,7 +62,7 @@ Retroscope supports common frameworks out of the box:
 
 - **Start / Stop / Continue** — practical improvements and habits
 - **Mad / Sad / Glad** — emotional tone and team morale
-- **4Ls** — Liked, Learned, Lacked, Longed for
+- **Sailboat** — Wind, Anchor, Rocks, Island (momentum, blockers, risks, goals)
 - **Custom templates** — facilitator-defined columns (future)
 
 Framework choice sets the board layout for the reflection phase.
