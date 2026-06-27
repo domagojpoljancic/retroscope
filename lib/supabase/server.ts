@@ -1,0 +1,45 @@
+import "server-only";
+
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+
+import {
+  getSupabaseAnonKey,
+  getSupabaseUrl,
+  isSupabaseConfigured,
+} from "@/lib/supabase/config";
+
+export async function createSupabaseServerClient() {
+  if (!isSupabaseConfigured()) {
+    throw new Error("Supabase is not configured");
+  }
+
+  const cookieStore = await cookies();
+
+  return createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        } catch {
+          // setAll can fail in Server Components; middleware handles refresh.
+        }
+      },
+    },
+  });
+}
+
+export async function getAuthUser() {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.auth.getUser();
+  return data.user;
+}
